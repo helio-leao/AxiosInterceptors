@@ -47,10 +47,10 @@ export function SessionProvider({ children }: PropsWithChildren) {
       if (!refreshToken) return setIsLoading(false);
 
       try {
-        const { data: accessToken } = await api.post("/token", {
+        const { data } = await api.post("/token", {
           refreshToken,
         });
-        setSession({ accessToken, refreshToken });
+        setSession({ accessToken: data.accessToken, refreshToken });
       } catch (error) {
         if (axios.isAxiosError(error) && error.response?.status) {
           await signOut();
