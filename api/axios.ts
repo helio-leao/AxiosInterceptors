@@ -4,7 +4,6 @@ import {
   STORAGE_ACCESS_TOKEN_KEY,
   STORAGE_REFRESH_TOKEN_KEY,
 } from "@/constants/storageKeys";
-import { logout } from "@/utils/auth";
 
 const api = axios.create({
   baseURL: "http://192.168.1.2:3000",
@@ -44,7 +43,6 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         // Handle refresh token failure (e.g., log out the user)
-        await logout();
         return Promise.reject(refreshError);
       }
     }

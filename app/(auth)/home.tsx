@@ -1,21 +1,17 @@
 import { View, Button } from "react-native";
 import { router } from "expo-router";
-import storage from "@react-native-async-storage/async-storage";
-import { STORAGE_REFRESH_TOKEN_KEY } from "@/constants/storageKeys";
-import api from "@/api/axios";
-import { logout } from "@/utils/auth";
+import { useSession } from "@/contexts/session";
 
 export default function Home() {
+  const { signOut } = useSession();
+
   const handleShowAccounts = () => {
-    router.push("/accounts");
+    router.push("accounts");
   };
 
   const handleSignOut = async () => {
     try {
-      const refreshToken = await storage.getItem(STORAGE_REFRESH_TOKEN_KEY);
-      await api.delete("/logout", { data: { refreshToken } });
-      await logout();
-      router.replace("/");
+      await signOut();
     } catch (error) {
       console.error(error);
     }
