@@ -6,7 +6,7 @@ export default function Home() {
   const { signOut } = useSession();
 
   const handleShowAccounts = () => {
-    router.push("accounts");
+    router.push("/accounts");
   };
 
   const handleSignOut = async () => {

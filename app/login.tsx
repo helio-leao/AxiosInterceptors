@@ -6,19 +6,20 @@ import {
   Text,
   ActivityIndicator,
 } from "react-native";
-import axios from "@/api/axios";
 import { Redirect } from "expo-router";
 import { useSession } from "@/contexts/session";
+import useAuthApi from "@/api/useAuthApi";
 
 export default function Login() {
   const { session, signIn } = useSession();
+  const api = useAuthApi();
   const [isLoading, setIsLoading] = useState(false);
   const [username, setUsername] = useState("");
 
   const handleSignin = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.post("/login", { username });
+      const response = await api.post("/login", { username });
       const { accessToken, refreshToken } = response.data;
       await signIn(accessToken, refreshToken);
     } catch (error) {
@@ -28,7 +29,7 @@ export default function Login() {
   };
 
   if (session) {
-    return <Redirect href={"home"} />;
+    return <Redirect href={"/home"} />;
   }
 
   return (

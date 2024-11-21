@@ -1,14 +1,15 @@
-import axios from "@/api/axios";
+import useAuthApi from "@/api/useAuthApi";
 import { useEffect, useState } from "react";
 import { View, Text } from "react-native";
 
 export default function Account() {
+  const api = useAuthApi();
   const [accounts, setAccounts] = useState([]);
 
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const response = await axios("/accounts");
+        const response = await api("/accounts");
         setAccounts(response.data);
       } catch (error) {
         console.error(error);

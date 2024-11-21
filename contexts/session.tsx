@@ -1,4 +1,3 @@
-import api from "@/api/axios";
 import {
   STORAGE_ACCESS_TOKEN_KEY,
   STORAGE_REFRESH_TOKEN_KEY,
@@ -69,7 +68,9 @@ export function SessionProvider({ children }: PropsWithChildren) {
         signOut: async () => {
           const refreshToken = session?.refreshToken;
           if (refreshToken) {
-            await api.delete("/logout", { data: { refreshToken } });
+            await axios.delete("http://192.168.1.2:3000/logout", {
+              data: { refreshToken },
+            });
           }
           await AsyncStorage.removeItem(STORAGE_ACCESS_TOKEN_KEY);
           await AsyncStorage.removeItem(STORAGE_REFRESH_TOKEN_KEY);
