@@ -40,9 +40,12 @@ export default function useAuthApi() {
       originalRequest._retry = true; // Prevent infinite loops
 
       try {
-        const { data } = await api.post("/token", {
-          refreshToken,
-        });
+        const { data } = await axios.post(
+          `${process.env.EXPO_PUBLIC_API_URL}/token`,
+          {
+            refreshToken,
+          }
+        );
         signIn(data.accessToken, refreshToken);
 
         // Retry the original request with the new token
