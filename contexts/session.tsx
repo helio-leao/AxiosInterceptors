@@ -46,36 +46,41 @@ export function SessionProvider({ children }: PropsWithChildren) {
 
       if (!refreshToken) return setIsLoading(false);
 
-      const { data: accessToken } = await api.post("/token", {
-        refreshToken,
-      });
-      setSession({ accessToken, refreshToken });
+      try {
+        const { data: accessToken } = await api.post("/token", {
+          refreshToken,
+        });
+        setSession({ accessToken, refreshToken });
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status) {
+          await signOut();
+        } else {
+          console.error(error);
+        }
+      }
       setIsLoading(false);
     };
     initSession();
   }, []);
 
+  const signIn = async (accessToken: string, refreshToken: string) => {
+    await AsyncStorage.setItem(STORAGE_REFRESH_TOKEN_KEY, refreshToken);
+    setSession({ accessToken, refreshToken });
+  };
+
+  const signOut = async () => {
+    const refreshToken = session?.refreshToken;
+    if (refreshToken) {
+      await api.delete("/logout", {
+        data: { refreshToken },
+      });
+    }
+    await AsyncStorage.removeItem(STORAGE_REFRESH_TOKEN_KEY);
+    setSession(null);
+  };
+
   return (
-    <AuthContext.Provider
-      value={{
-        signIn: async (accessToken: string, refreshToken: string) => {
-          await AsyncStorage.setItem(STORAGE_REFRESH_TOKEN_KEY, refreshToken);
-          setSession({ accessToken, refreshToken });
-        },
-        signOut: async () => {
-          const refreshToken = session?.refreshToken;
-          if (refreshToken) {
-            await api.delete("/logout", {
-              data: { refreshToken },
-            });
-          }
-          await AsyncStorage.removeItem(STORAGE_REFRESH_TOKEN_KEY);
-          setSession(null);
-        },
-        session,
-        isLoading,
-      }}
-    >
+    <AuthContext.Provider value={{ signIn, signOut, session, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
