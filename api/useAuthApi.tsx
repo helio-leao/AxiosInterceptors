@@ -1,26 +1,23 @@
 import axios from "axios";
-import localStorage from "@react-native-async-storage/async-storage";
-import {
-  STORAGE_ACCESS_TOKEN_KEY,
-  STORAGE_REFRESH_TOKEN_KEY,
-} from "@/constants/storageKeys";
 import { useSession } from "@/contexts/session";
 
 export default function useAuthApi() {
-  const { signOut } = useSession();
+  const { session, signIn, signOut } = useSession();
 
   const api = axios.create({
-    baseURL: "http://192.168.1.2:3000",
+    baseURL: process.env.EXPO_PUBLIC_API_URL,
   });
 
   api.interceptors.request.use(
     async (config) => {
-      const token = await localStorage.getItem(STORAGE_ACCESS_TOKEN_KEY);
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+      const accessToken = session?.accessToken;
+
+      if (accessToken && !config._retry) {
+        config.headers.Authorization = `Bearer ${accessToken}`;
       }
       return config;
     },
+
     (error) => Promise.reject(error)
   );
 
@@ -30,32 +27,31 @@ export default function useAuthApi() {
 
     async (error) => {
       const originalRequest = error.config;
+      const refreshToken = session?.refreshToken;
 
-      if (error.response?.status === 401 && !originalRequest._retry) {
-        originalRequest._retry = true; // Prevent infinite loops
-        try {
-          const refreshToken = await localStorage.getItem(
-            STORAGE_REFRESH_TOKEN_KEY
-          );
-          const { data } = await api.post("/token", {
-            refreshToken,
-          });
-          await localStorage.setItem(
-            STORAGE_ACCESS_TOKEN_KEY,
-            data.accessToken
-          );
-
-          // Retry the original request with the new token
-          originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
-          return api(originalRequest);
-        } catch (refreshError) {
-          // Handle refresh token failure (e.g., log out the user)
-          await signOut();
-          return Promise.reject(refreshError);
-        }
+      if (
+        error.response?.status !== 401 ||
+        originalRequest._retry ||
+        !refreshToken
+      ) {
+        return Promise.reject(error);
       }
 
-      return Promise.reject(error);
+      originalRequest._retry = true; // Prevent infinite loops
+
+      try {
+        const { data } = await api.post("/token", {
+          refreshToken,
+        });
+        signIn(data.accessToken, refreshToken);
+
+        // Retry the original request with the new token
+        originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        await signOut();
+        return Promise.reject(refreshError);
+      }
     }
   );
 
